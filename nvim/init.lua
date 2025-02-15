@@ -249,16 +249,16 @@ lazy.setup({
   {'neovim/nvim-lspconfig', lazy = false},
 
   -- Autocomplete
-  -- {'hrsh7th/nvim-cmp'},
-  -- {'hrsh7th/cmp-buffer'},
-  -- {'hrsh7th/cmp-path'},
-  -- {'saadparwaiz1/cmp_luasnip'},
-  -- {'hrsh7th/cmp-nvim-lsp'},
-  -- {'hrsh7th/cmp-nvim-lua'},
+  {'hrsh7th/nvim-cmp'},
+  {'hrsh7th/cmp-buffer'},
+  {'hrsh7th/cmp-path'},
+  {'saadparwaiz1/cmp_luasnip'},
+  {'hrsh7th/cmp-nvim-lsp'},
+  {'hrsh7th/cmp-nvim-lua'},
 
   -- Snippets
-  -- {'L3MON4D3/LuaSnip'},
-  -- {'rafamadriz/friendly-snippets'},
+  {'L3MON4D3/LuaSnip'},
+  {'rafamadriz/friendly-snippets'},
 })
 
 
@@ -520,112 +520,7 @@ require('toggleterm').setup({
     end
   end,
 })
-
-
----
--- Luasnip (snippet engine)
----
--- See :help luasnip-loaders
--- require('luasnip.loaders.from_vscode').lazy_load()
-
-
----
--- nvim-cmp (autocomplete)
----
 --[[
-vim.opt.completeopt = {'menu', 'menuone', 'noselect'}
-local cmp = require('cmp')
-cmp.setup({})
-
-local luasnip = require('luasnip')
-
-local select_opts = {behavior = cmp.SelectBehavior.Select}
-
--- See :help cmp-config
-cmp.setup({
-  snippet = {
-    expand = function(args)
-      luasnip.lsp_expand(args.body)
-    end
-  },
-  sources = {
-    {name = 'path'},
-    {name = 'nvim_lsp'},
-    {name = 'buffer', keyword_length = 3},
-    {name = 'luasnip', keyword_length = 2},
-  },
-  window = {
-    completion = cmp.config.window.bordered(),
-    documentation = cmp.config.window.bordered(),
-  },
-  formatting = {
-    fields = {'menu', 'abbr', 'kind'},
-    format = function(entry, item)
-      local menu_icon = {
-        nvim_lsp = 'λ',
-        luasnip = '⋗',
-        buffer = 'Ω',
-        path = '🖫',
-      }
-
-      item.menu = menu_icon[entry.source.name]
-      return item
-    end,
-  },
-  -- See :help cmp-mapping
-  mapping = {
-    ['<Up>'] = cmp.mapping.select_prev_item(select_opts),
-    ['<Down>'] = cmp.mapping.select_next_item(select_opts),
-
-    ['<C-p>'] = cmp.mapping.select_prev_item(select_opts),
-    ['<C-n>'] = cmp.mapping.select_next_item(select_opts),
-
-    ['<C-u>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-d>'] = cmp.mapping.scroll_docs(4),
-
-    ['<C-e>'] = cmp.mapping.abort(),
-    ['<C-y>'] = cmp.mapping.confirm({select = true}),
-    ['<CR>'] = cmp.mapping.confirm({select = false}),
-
-    ['<C-f>'] = cmp.mapping(function(fallback)
-      if luasnip.jumpable(1) then
-        luasnip.jump(1)
-      else
-        fallback()
-      end
-    end, {'i', 's'}),
-
-    ['<C-b>'] = cmp.mapping(function(fallback)
-      if luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-      else
-        fallback()
-      end
-    end, {'i', 's'}),
-
-    ['<Tab>'] = cmp.mapping(function(fallback)
-      local col = vim.fn.col('.') - 1
-
-      if cmp.visible() then
-        cmp.select_next_item(select_opts)
-      elseif col == 0 or vim.fn.getline('.'):sub(col, col):match('%s') then
-        fallback()
-      else
-        cmp.complete()
-      end
-    end, {'i', 's'}),
-
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item(select_opts)
-      else
-        fallback()
-      end
-    end, {'i', 's'}),
-  },
-})
-
-
 ---
 -- Diagnostic customization
 ---
@@ -652,16 +547,6 @@ vim.diagnostic.config({
     source = 'always',
   },
 })
-
-vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(
-  vim.lsp.handlers.hover,
-  {border = 'rounded'}
-)
-
-vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
-  vim.lsp.handlers.signature_help,
-  {border = 'rounded'}
-)
 
 ---
 -- LSP Keybindings
@@ -747,6 +632,64 @@ require('mason-lspconfig').setup({
 
 
 
+---
+-- Luasnip (snippet engine)
+---
+-- See :help luasnip-loaders
+require('luasnip.loaders.from_vscode').lazy_load()
+
+
+---
+-- nvim-cmp (autocomplete)
+---
+local cmp = require('cmp')
+
+local cmp_select = {behavior = cmp.SelectBehavior.Select}
+cmp.setup({
+  snippet = {
+    -- REQUIRED - you must specify a snippet engine
+    expand = function(args)
+      -- vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
+      require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+      -- require('snippy').expand_snippet(args.body) -- For `snippy` users.
+      -- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
+      -- vim.snippet.expand(args.body) -- For native neovim snippets (Neovim v0.10+)
+
+      -- For `mini.snippets` users:
+      -- local insert = MiniSnippets.config.expand.insert or MiniSnippets.default_insert
+      -- insert({ body = args.body }) -- Insert at cursor
+      -- cmp.resubscribe({ "TextChangedI", "TextChangedP" })
+      -- require("cmp.config").set_onetime({ sources = {} })
+    end,
+  },
+  window = {
+    completion = cmp.config.window.bordered(),
+    documentation = cmp.config.window.bordered(),
+  },
+  mapping = cmp.mapping.preset.insert({
+    -- ['<C-Space>'] = cmp.mapping.complete(),
+    -- ['<C-e>'] = cmp.mapping.abort(),
+
+    ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
+    ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
+    ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+    ['<C-f>'] = cmp.mapping.scroll_docs(4),
+    ['<Tab>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+    ['<CR>'] = cmp.config.disable,
+  }),
+  sources = cmp.config.sources({
+    { name = 'nvim_lsp' },
+    -- { name = 'vsnip' }, -- For vsnip users.
+    { name = 'luasnip' }, -- For luasnip users.
+    { name = 'path' },
+    -- { name = 'ultisnips' }, -- For ultisnips users.
+    -- { name = 'snippy' }, -- For snippy users.
+  }, {
+    { name = 'buffer' },
+  })
+})
+
+
 
 require("mason").setup()
 require("mason-lspconfig").setup()
@@ -788,7 +731,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
     -- You can search each function in the help page.
     -- For example :help vim.lsp.buf.hover()
-    print("attaching")
     bufmap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>')
     bufmap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>')
     bufmap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>')
@@ -796,9 +738,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
     bufmap('n', 'go', '<cmd>lua vim.lsp.buf.type_definition()<cr>')
     bufmap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<cr>')
     bufmap('n', 'gs', '<cmd>lua vim.lsp.buf.signature_help()<cr>')
-    bufmap('n', '<F2>', '<cmd>lua vim.lsp.buf.rename()<cr>')
-    bufmap({'n', 'x'}, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<cr>')
-    bufmap('n', '<F4>', '<cmd>lua vim.lsp.buf.code_action()<cr>')
+    bufmap('n', '<leader>gr', '<cmd>lua vim.lsp.buf.rename()<cr>')
+    -- bufmap({'n', 'x'}, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<cr>')
+    bufmap('n', 'ga', '<cmd>lua vim.lsp.buf.code_action()<cr>')
     bufmap('n', 'gl', '<cmd>lua vim.diagnostic.open_float()<cr>')
     bufmap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<cr>')
     bufmap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<cr>')
