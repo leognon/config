@@ -78,6 +78,7 @@ vim.api.nvim_create_autocmd(
 -- ========================================================================== --
 
 vim.g.mapleader = " "
+vim.g.maplocalleader = "," -- This is necessary for Conjure mappings
 -- vim.keymap.set("n", "<leader>e", vim.cmd.Ex)
 vim.keymap.set("n", "<leader>w", vim.cmd.w)
 
@@ -235,7 +236,8 @@ lazy.setup({
   {'lervag/vimtex'},
   {'mtikekar/vim-bsv'},
   {'tikhomirov/vim-glsl'},
-  -- {'Olical/conjure'},
+  {'Olical/conjure'},
+  { "julienvincent/nvim-paredit" },  -- Paredit for scheme
 
   -- Utilities
   {'nvim-lua/plenary.nvim'},
@@ -467,6 +469,40 @@ require('nvim-tree').setup({
 
 vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<cr>')
 
+---
+-- Conjure bindings
+---
+vim.g["conjure#filetypes"] = { "scheme" } -- Only use Conjure for scheme
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "scheme" },
+  callback = function()
+    vim.keymap.set("n", "<localleader>rs", ":ConjureSchemeStop<CR>:ConjureSchemeStart<CR>", { buffer = true })
+  end,
+})
+
+---
+-- Paredit bindings
+---
+local paredit = require("nvim-paredit")
+-- Make these keys do their usual function
+local function reset_paredit_binding(keys)
+  local result = {}
+  for _, key in ipairs(keys) do
+    result[key] = {
+      function() vim.api.nvim_feedkeys(key, 'n', false) end,
+      mode = { 'n' },
+    }
+  end
+  return result
+end
+
+local pareditConfig = {
+  keys = reset_paredit_binding({ "E", "W", "B", "gE" }),
+  indent = { enabled = true },
+}
+
+
+paredit.setup(pareditConfig)
 
 ---
 -- toggleterm
