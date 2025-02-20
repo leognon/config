@@ -31,6 +31,13 @@ vim.opt.updatetime = 50
 
 vim.opt.colorcolumn = "120"
 vim.opt.textwidth = 120
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "scheme",
+    callback = function()
+        vim.opt_local.colorcolumn = "85"
+        vim.opt_local.textwidth = 84
+    end,
+})
 
 vim.opt.splitbelow = true
 vim.opt.splitright = true
@@ -509,7 +516,9 @@ paredit.setup(pareditConfig)
 ---
 -- See :help toggleterm-roadmap
 require('toggleterm').setup({
-  open_mapping = '<C-t>',
+  open_mapping = '<leader>l',
+  insert_mappings = false,
+  terminal_mappings = false,
   direction = 'vertical',
   shade_terminals = false,
   size = function(term)
@@ -677,6 +686,9 @@ cmp.setup({
     ['<Tab>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
     ['<CR>'] = cmp.config.disable,
   }),
+  completion = {
+    completeopt = 'menu,menuone,noinsert'
+  },
   sources = cmp.config.sources({
     { name = 'nvim_lsp' },
     -- { name = 'vsnip' }, -- For vsnip users.
@@ -738,8 +750,8 @@ vim.api.nvim_create_autocmd('LspAttach', {
     bufmap('n', 'go', '<cmd>lua vim.lsp.buf.type_definition()<cr>')
     bufmap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<cr>')
     bufmap('n', 'gs', '<cmd>lua vim.lsp.buf.signature_help()<cr>')
-    bufmap('n', '<leader>gr', '<cmd>lua vim.lsp.buf.rename()<cr>')
-    -- bufmap({'n', 'x'}, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<cr>')
+    bufmap('n', '<leader>r', '<cmd>lua vim.lsp.buf.rename()<cr>')
+    bufmap({'n', 'x'}, 'gf', '<cmd>lua vim.lsp.buf.format({async = true})<cr>')
     bufmap('n', 'ga', '<cmd>lua vim.lsp.buf.code_action()<cr>')
     bufmap('n', 'gl', '<cmd>lua vim.diagnostic.open_float()<cr>')
     bufmap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<cr>')
