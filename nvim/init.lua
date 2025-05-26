@@ -66,6 +66,7 @@ vim.api.nvim_create_autocmd(
 -- For bsv files. Remove this after 6.191 is done
 -- vim.opt.conceallevel = 0
 
+vim.g.coqtail_noimap = true
 -- CoqtailChecked xxx ctermbg=17 guibg=LightGreen
 
 -- vim.cmd[[autocmd ColorScheme * hi def CoqtailSent ctermbg=021]] -- Blue (https://en.wikipedia.org/wiki/File:Xterm_256color_chart.svg)
@@ -88,6 +89,29 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = "," -- This is necessary for Conjure mappings
 -- vim.keymap.set("n", "<leader>e", vim.cmd.Ex)
 vim.keymap.set("n", "<leader>w", vim.cmd.w)
+
+vim.keymap.set("n", "<leader>w", vim.cmd.w)
+
+-- Specify a run command to make it easy to run different commands depending on what Im doing
+local run_command = nil
+vim.api.nvim_set_keymap('n', '<leader>j', "<cmd>lua RunCommand()<CR>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>k', "<cmd>lua SetRunCommand()<CR>", { noremap = true, silent = true })
+function SetRunCommand()
+  vim.ui.input({ prompt = 'Enter run command: ' }, function(input)
+    if input and input ~= '' then
+      run_command = input
+      vim.cmd('!' .. run_command)
+    end
+  end)
+end
+function RunCommand()
+  if run_command then
+    vim.cmd('!' .. run_command)
+  else
+    SetRunCommand()
+  end
+end
+
 
 vim.keymap.set("n", "<C-h>", "<C-w>h")
 vim.keymap.set("n", "<C-j>", "<C-w>j")
@@ -228,7 +252,6 @@ lazy.setup({
   {'lewis6991/gitsigns.nvim'},
   {'tpope/vim-fugitive'},
   {'mbbill/undotree'},
-  {'psliwka/vim-smoothie'},
 
   -- Code manipulation
   {'nvim-treesitter/nvim-treesitter'},
@@ -243,12 +266,19 @@ lazy.setup({
   {'lervag/vimtex'},
   {'mtikekar/vim-bsv'},
   {'tikhomirov/vim-glsl'},
-  {'Olical/conjure'},
-  { "julienvincent/nvim-paredit" },  -- Paredit for scheme
+  --[[ {'Olical/conjure'}, ]]
+  --[[ { "julienvincent/nvim-paredit" },  -- Paredit for scheme ]]
 
   -- Utilities
   {'nvim-lua/plenary.nvim'},
   {'akinsho/toggleterm.nvim'},
+  {'psliwka/vim-smoothie'},
+   -- Live share
+
+  -- {
+  --   "azratul/live-share.nvim",
+  --   dependencies = { "jbyuki/instant.nvim", }
+  -- },
 
   -- LSP support
   {'williamboman/mason.nvim', lazy = false},
@@ -394,6 +424,14 @@ require('gitsigns').setup({
   }
 })
 
+-- Live share
+--[[ vim.g.instant_username = "leognon"
+require("live-share").setup({
+  port_internal = 9876, -- The local port to be used for the live share connection
+  max_attempts = 20, -- Maximum number of attempts to read the URL from service(serveo.net or localhost.run), every 250 ms
+  -- service_url = "/tmp/service.url", -- Path to the file where the URL from serveo.net will be stored
+  service = "serveo.net", -- Service to use, options are serveo.net or localhost.run
+}) ]]
 
 ---
 -- Telescope
@@ -435,7 +473,7 @@ require('gitsigns').setup({
 -- vim.keymap.set('n', '<leader>fs', '<cmd>Telescope current_buffer_fuzzy_find<cr>')
 -- fzf maps
 vim.keymap.set("n", "<C-g>", ":Rg<CR>")
-vim.keymap.set("n", "<C-s>", ":Files<CR>")
+vim.keymap.set("n", "<leader><C-s>", ":Files<CR>")
 vim.keymap.set("n", "<C-s>", ":GFiles<CR>")
 -- -- TODO: look into telescope.builtin.lsp_definitions
 
@@ -479,18 +517,18 @@ vim.keymap.set('n', '<leader>e', '<cmd>NvimTreeToggle<cr>')
 ---
 -- Conjure bindings
 ---
-vim.g["conjure#filetypes"] = { "scheme" } -- Only use Conjure for scheme
+--[[ vim.g["conjure#filetypes"] = { "scheme" } -- Only use Conjure for scheme
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "scheme" },
   callback = function()
     vim.keymap.set("n", "<localleader>rs", ":ConjureSchemeStop<CR>:ConjureSchemeStart<CR>", { buffer = true })
   end,
-})
+}) ]]
 
 ---
 -- Paredit bindings
 ---
-local paredit = require("nvim-paredit")
+--[[ local paredit = require("nvim-paredit")
 -- Make these keys do their usual function
 local function reset_paredit_binding(keys)
   local result = {}
@@ -509,7 +547,11 @@ local pareditConfig = {
 }
 
 
-paredit.setup(pareditConfig)
+paredit.setup(pareditConfig) ]]
+
+
+-- rust settings
+vim.g.rust_recommended_style = 0
 
 ---
 -- toggleterm
@@ -712,6 +754,39 @@ require("mason-lspconfig").setup()
 -- ...
 
 require("lspconfig").ocamllsp.setup {}
+
+require("lspconfig")["rust_analyzer"].setup {}
+
+-- Decaf (6.110 language) LSP
+-- local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+-- parser_config.decaf = {
+--     install_info = {
+--       url = '/Users/leo/Desktop/School/6.110/sp25-team18/language-server',
+--       files = {"src/parser.c"},
+--       generate_requires_npm = false,
+--       requires_generate_from_grammar = true,
+--     },
+--     filetype = "decaf",
+-- }
+
+-- local configs = require('lspconfig.configs')
+-- local lspconfig = require("lspconfig")
+-- if not configs.decaf_lsp then
+--     configs.decaf_lsp = {
+--       default_config = {
+--         cmd = { 'node', '/Users/leo/Desktop/School/6.110/sp25-team18/language-server/dist/server.js', '--stdio' },
+--         root_dir = lspconfig.util.root_pattern('.'),
+--         filetypes = { 'decaf' },
+--       },
+--     }
+-- end
+-- lspconfig.decaf_lsp.setup {}
+-- 
+-- vim.filetype.add({
+--   extension = {
+--     ['dcf'] = 'decaf',
+--   },
+-- })
 
 vim.diagnostic.config({
   virtual_text = false,
