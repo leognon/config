@@ -11,7 +11,14 @@ vim.opt.softtabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
 
+vim.o.foldcolumn = '0'
+vim.o.foldlevel = 99 -- Using ufo provider need a large value, feel free to decrease the value
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
+
 vim.opt.smartindent = true
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
 
 vim.opt.wrap = false
 
@@ -112,6 +119,8 @@ function RunCommand()
   end
 end
 
+vim.keymap.set({ "n", "v" }, "L", "8<C-e>")
+vim.keymap.set({ "n", "v" }, "H", "8<C-y>")
 
 vim.keymap.set("n", "<C-h>", "<C-w>h")
 vim.keymap.set("n", "<C-j>", "<C-w>j")
@@ -138,9 +147,9 @@ vim.keymap.set("n", "<leader>Y", [["+Y]])
 
 vim.keymap.set({"n", "v"}, "<leader>d", [["_d]])
 
-vim.keymap.set("n", "Q", "<nop>")
+vim.keymap.set("n", "Q", "@q")
 -- vim.keymap.set("n", "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>")
--- vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
+vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
 
 -- vim.keymap.set("n", "<C-k>", "<cmd>cnext<CR>zz")
 -- vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz")
@@ -176,6 +185,8 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+vim.keymap.set("n", "<leader>c", ":vs<CR>:e ~/.config/nvim/init.lua<CR>")
+
 
 -- ========================================================================== --
 -- ==                               COMMANDS                               == --
@@ -183,6 +194,9 @@ vim.api.nvim_create_autocmd("FileType", {
 
 vim.api.nvim_create_user_command('Wrap', 'set wrap lbr', {})
 vim.api.nvim_create_user_command('Fold', 'set foldmethod=indent', {})
+
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 
 -- ========================================================================== --
 -- ==                               PLUGINS                                == --
@@ -571,65 +585,20 @@ require('toggleterm').setup({
     end
   end,
 })
---[[
+
 ---
 -- Diagnostic customization
 ---
-local sign = function(opts)
-  -- See :help sign_define()
-  vim.fn.sign_define(opts.name, {
-    texthl = opts.name,
-    text = opts.text,
-    numhl = ''
-  })
-end
-
-sign({name = 'DiagnosticSignError', text = '✘'})
-sign({name = 'DiagnosticSignWarn', text = '▲'})
-sign({name = 'DiagnosticSignHint', text = '⚑'})
-sign({name = 'DiagnosticSignInfo', text = '»'})
-
--- See :help vim.diagnostic.config()
 vim.diagnostic.config({
-  virtual_text = false,
-  severity_sort = true,
-  float = {
-    border = 'rounded',
-    source = 'always',
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = '✘',
+      [vim.diagnostic.severity.WARN] = '▲',
+      [vim.diagnostic.severity.HINT] = '⚑',
+      [vim.diagnostic.severity.INFO] = '»',
+    },
   },
 })
-
----
--- LSP Keybindings
----
-vim.api.nvim_create_autocmd('LspAttach', {
-  group = group,
-  desc = 'LSP actions',
-  callback = function()
-    local bufmap = function(mode, lhs, rhs)
-      local opts = {buffer = true}
-      vim.keymap.set(mode, lhs, rhs, opts)
-    end
-
-    -- You can search each function in the help page.
-    -- For example :help vim.lsp.buf.hover()
-
-    bufmap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>')
-    bufmap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>')
-    bufmap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>')
-    bufmap('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<cr>')
-    bufmap('n', 'go', '<cmd>lua vim.lsp.buf.type_definition()<cr>')
-    bufmap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<cr>')
-    bufmap('n', 'gs', '<cmd>lua vim.lsp.buf.signature_help()<cr>')
-    bufmap('n', '<F2>', '<cmd>lua vim.lsp.buf.rename()<cr>')
-    bufmap({'n', 'x'}, '<F3>', '<cmd>lua vim.lsp.buf.format({async = true})<cr>')
-    bufmap('n', '<F4>', '<cmd>lua vim.lsp.buf.code_action()<cr>')
-    bufmap('n', 'gl', '<cmd>lua vim.diagnostic.open_float()<cr>')
-    bufmap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<cr>')
-    bufmap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<cr>')
-  end
-})
-
 
 ---
 -- LSP servers
@@ -641,22 +610,17 @@ require('mason').setup({
 
 local lspconfig = require('lspconfig')
 -- Setup OCAML lsp to run without mason
--- local opts = {
---   on_attach = M.on_attach,
---   capabilities = M.common_capabilities(),
--- }
-lspconfig.ocamllsp.setup({})
-
+-- local opts = { on_attach = M.on_attach, capabilities = M.common_capabilities(), }
+-- lspconfig.ocamllsp.setup({})
 
 local lsp_capabilities = require('cmp_nvim_lsp').default_capabilities()
-
 -- See :help mason-lspconfig-settings
 require('mason-lspconfig').setup({
   ensure_installed = {
     -- 'tsserver',
-    'eslint',
-    'html',
-    'cssls'
+    -- 'eslint',
+    -- 'html',
+    -- 'cssls'
   },
   -- See :help mason-lspconfig.setup_handlers()
   handlers = {
@@ -666,21 +630,48 @@ require('mason-lspconfig').setup({
         capabilities = lsp_capabilities,
       })
     end,
-    -- ['tsserver'] = function()
-    --   lspconfig.tsserver.setup({
-    --     capabilities = lsp_capabilities,
-    --     settings = {
-    --       completions = {
-    --         completeFunctionCalls = true
-    --       }
-    --     }
-    --   })
-    -- end,
   }
 })
---]]
+
+-- After setting up mason-lspconfig you may set up servers via lspconfig
+-- require("lspconfig").lua_ls.setup {}
+-- require("lspconfig").rust_analyzer.setup {}
+-- ...
+-- require("lspconfig").ocamllsp.setup {}
+-- require("lspconfig")["rust_analyzer"].setup {}
+-- require("lspconfig")["clangd"].setup {}
 
 
+-- Decaf (6.110 language) LSP
+-- local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+-- parser_config.decaf = {
+--     install_info = {
+--       url = '/Users/leo/Desktop/School/6.110/sp25-team18/language-server',
+--       files = {"src/parser.c"},
+--       generate_requires_npm = false,
+--       requires_generate_from_grammar = true,
+--     },
+--     filetype = "decaf",
+-- }
+
+-- local configs = require('lspconfig.configs')
+-- local lspconfig = require("lspconfig")
+-- if not configs.decaf_lsp then
+--     configs.decaf_lsp = {
+--       default_config = {
+--         cmd = { 'node', '/Users/leo/Desktop/School/6.110/sp25-team18/language-server/dist/server.js', '--stdio' },
+--         root_dir = lspconfig.util.root_pattern('.'),
+--         filetypes = { 'decaf' },
+--       },
+--     }
+-- end
+-- lspconfig.decaf_lsp.setup {}
+-- 
+-- vim.filetype.add({
+--   extension = {
+--     ['dcf'] = 'decaf',
+--   },
+-- })
 
 
 ---
@@ -745,49 +736,6 @@ cmp.setup({
 
 
 
-require("mason").setup()
-require("mason-lspconfig").setup()
-
--- After setting up mason-lspconfig you may set up servers via lspconfig
--- require("lspconfig").lua_ls.setup {}
--- require("lspconfig").rust_analyzer.setup {}
--- ...
-
-require("lspconfig").ocamllsp.setup {}
-
-require("lspconfig")["rust_analyzer"].setup {}
-
--- Decaf (6.110 language) LSP
--- local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
--- parser_config.decaf = {
---     install_info = {
---       url = '/Users/leo/Desktop/School/6.110/sp25-team18/language-server',
---       files = {"src/parser.c"},
---       generate_requires_npm = false,
---       requires_generate_from_grammar = true,
---     },
---     filetype = "decaf",
--- }
-
--- local configs = require('lspconfig.configs')
--- local lspconfig = require("lspconfig")
--- if not configs.decaf_lsp then
---     configs.decaf_lsp = {
---       default_config = {
---         cmd = { 'node', '/Users/leo/Desktop/School/6.110/sp25-team18/language-server/dist/server.js', '--stdio' },
---         root_dir = lspconfig.util.root_pattern('.'),
---         filetypes = { 'decaf' },
---       },
---     }
--- end
--- lspconfig.decaf_lsp.setup {}
--- 
--- vim.filetype.add({
---   extension = {
---     ['dcf'] = 'decaf',
---   },
--- })
-
 vim.diagnostic.config({
   virtual_text = false,
   severity_sort = true,
@@ -807,6 +755,7 @@ vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
   {border = 'rounded'}
 )
 
+-- LSP keybindings
 vim.api.nvim_create_autocmd('LspAttach', {
   group = group,
   desc = 'LSP actions',
@@ -822,7 +771,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
     bufmap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>')
     bufmap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<cr>')
     bufmap('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<cr>')
-    bufmap('n', 'go', '<cmd>lua vim.lsp.buf.type_definition()<cr>')
+    bufmap('n', 'gp', '<cmd>lua vim.lsp.buf.type_definition()<cr>')
     bufmap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<cr>')
     bufmap('n', 'gs', '<cmd>lua vim.lsp.buf.signature_help()<cr>')
     bufmap('n', '<leader>r', '<cmd>lua vim.lsp.buf.rename()<cr>')
