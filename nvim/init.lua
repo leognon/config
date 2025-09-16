@@ -598,14 +598,20 @@ vim.diagnostic.config({
       [vim.diagnostic.severity.INFO] = '»',
     },
   },
+  virtual_text = false,
+  severity_sort = true,
+  float = {
+    source = 'always',
+  },
 })
+
+vim.o.winborder = 'rounded'
 
 ---
 -- LSP servers
 ---
 -- See :help mason-settings
 require('mason').setup({
-  ui = {border = 'rounded'}
 })
 
 local lspconfig = require('lspconfig')
@@ -735,26 +741,6 @@ cmp.setup({
 })
 
 
-
-vim.diagnostic.config({
-  virtual_text = false,
-  severity_sort = true,
-  float = {
-    border = 'rounded',
-    source = 'always',
-  },
-})
-
-vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(
-  vim.lsp.handlers.hover,
-  {border = 'rounded'}
-)
-
-vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(
-  vim.lsp.handlers.signature_help,
-  {border = 'rounded'}
-)
-
 -- LSP keybindings
 vim.api.nvim_create_autocmd('LspAttach', {
   group = group,
@@ -782,8 +768,4 @@ vim.api.nvim_create_autocmd('LspAttach', {
     bufmap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<cr>')
   end
 })
-
-
-
-
 
